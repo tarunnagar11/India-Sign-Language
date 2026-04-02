@@ -14,9 +14,9 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 def load_model():
     return tf.keras.models.load_model(
         "final_model.keras",
-        compile=False
+        compile=False,
+        safe_mode=False   # 🔥 important fallback
     )
-
 model = load_model()
 
 # -----------------------------
