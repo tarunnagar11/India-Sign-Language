@@ -12,11 +12,8 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 # -----------------------------
 @st.cache_resource
 def load_model():
-    return tf.keras.models.load_model(
-        "clean_model.h5",
-        compile=False
-    )
-
+    import tensorflow as tf
+    return tf.keras.models.load_model("final_model.keras", compile=False)
 model = load_model()
 
 # -----------------------------
