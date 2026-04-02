@@ -8,11 +8,15 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 # -----------------------------
-# LOAD MODEL
+# LOAD MODEL (FIXED)
 # -----------------------------
 @st.cache_resource
 def load_model():
-    return tf.keras.models.load_model("final_model.h5", compile=False)
+    return tf.keras.models.load_model(
+        "final_model.h5",
+        compile=False,
+        safe_mode=False   # 🔥 IMPORTANT FIX
+    )
 
 model = load_model()
 
