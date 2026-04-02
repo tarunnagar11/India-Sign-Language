@@ -1,103 +1,106 @@
 import streamlit as st
 import numpy as np
-import tensorflow as tf
 from PIL import Image
-import os
-
-# Reduce TensorFlow logs
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+import cv2
+import tflite_runtime.interpreter as tflite
 
 # -----------------------------
-# DEBUG (remove later)
-# -----------------------------
-st.write("FILES:", os.listdir())
-
-# -----------------------------
-# LOAD MODEL (.h5 version)
+# LOAD TFLITE MODEL
 # -----------------------------
 @st.cache_resource
 def load_model():
-    try:
-        model = tf.keras.models.load_model("final_model.h5", compile=False)
-        st.success("Model Loaded Successfully ✅")
-        return model
-    except Exception as e:
-        st.error(f"Error loading model: {e}")
-        return None
+    interpreter = tflite.Interpreter(model_path="model.tflite")
+    interpreter.allocate_tensors()
+    return interpreter
 
-model = load_model()
+interpreter = load_model()
+
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
 
 # -----------------------------
 # CLASS LABELS
 # -----------------------------
-classes = list("abcdefghijklmnopqrstuvwxyz")
+classes = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 # -----------------------------
-# PAGE CONFIG
+# UI
 # -----------------------------
-st.set_page_config(page_title="ISL Recognition", layout="centered")
+st.set_page_config(page_title="ISL AI", layout="centered")
 
-st.title("🤟 Indian Sign Language Recognition System")
-st.write("Upload image or capture photo")
+st.title("🤟 ISL Recognition AI (Real-Time)")
+st.caption("Fast • Lightweight • Accurate")
 
 # -----------------------------
 # PREDICTION FUNCTION
 # -----------------------------
-def predict_image(image):
+def predict(image):
     img = image.resize((224, 224))
-    img_array = np.array(img) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
+    img = np.array(img) / 255.0
+    img = np.expand_dims(img, axis=0).astype(np.float32)
 
-    prediction = model.predict(img_array)
-    predicted_class = np.argmax(prediction)
-    confidence = np.max(prediction)
+    interpreter.set_tensor(input_details[0]['index'], img)
+    interpreter.invoke()
 
-    return predicted_class, confidence
+    output = interpreter.get_tensor(output_details[0]['index'])
+    pred = np.argmax(output)
+    conf = np.max(output)
 
-# -----------------------------
-# SIDEBAR OPTION
-# -----------------------------
-option = st.sidebar.radio(
-    "Choose Input Method",
-    ["Upload Image", "Camera Capture"]
-)
-
-# =========================================================
-# IMAGE UPLOAD
-# =========================================================
-if option == "Upload Image":
-    st.header("📁 Upload Image")
-
-    uploaded_file = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
-
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file).convert("RGB")
-        st.image(image, caption="Uploaded Image", use_container_width=True)
-
-        pred_class, conf = predict_image(image)
-
-        st.success(f"Predicted: {classes[pred_class].upper()}")
-        st.info(f"Confidence: {conf*100:.2f}%")
-
-# =========================================================
-# CAMERA CAPTURE
-# =========================================================
-elif option == "Camera Capture":
-    st.header("📷 Capture from Camera")
-
-    camera_image = st.camera_input("Take a photo")
-
-    if camera_image is not None:
-        image = Image.open(camera_image).convert("RGB")
-        st.image(image, caption="Captured Image", use_container_width=True)
-
-        pred_class, conf = predict_image(image)
-
-        st.success(f"Predicted: {classes[pred_class].upper()}")
-        st.info(f"Confidence: {conf*100:.2f}%")
+    return pred, conf
 
 # -----------------------------
-# FOOTER
+# MODE SELECT
+# -----------------------------
+mode = st.radio("Choose Mode", ["Upload", "Camera"])
+
+# -----------------------------
+# UPLOAD MODE
+# -----------------------------
+if mode == "Upload":
+    file = st.file_uploader("Upload Image", type=["jpg","png","jpeg"])
+
+    if file:
+        img = Image.open(file).convert("RGB")
+        st.image(img)
+
+        pred, conf = predict(img)
+
+        st.success(f"Prediction: {classes[pred]}")
+        st.progress(float(conf))
+
+# -----------------------------
+# CAMERA MODE (REAL-TIME FEEL)
+# -----------------------------
+elif mode == "Camera":
+    camera = st.camera_input("Capture Sign")
+
+    if camera:
+        img = Image.open(camera).convert("RGB")
+        st.image(img)
+
+        pred, conf = predict(img)
+
+        st.success(f"Prediction: {classes[pred]}")
+        st.progress(float(conf))
+
+# -----------------------------
+# WORD BUILDER (BONUS 🔥)
 # -----------------------------
 st.markdown("---")
-st.caption("Built with TensorFlow + Streamlit 🚀")
+st.subheader("🧠 Word Builder")
+
+if "word" not in st.session_state:
+    st.session_state.word = ""
+
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("Add Last Prediction"):
+        if 'pred' in locals():
+            st.session_state.word += classes[pred]
+
+with col2:
+    if st.button("Clear"):
+        st.session_state.word = ""
+
+st.text_input("Generated Word", st.session_state.word)
