@@ -4,12 +4,27 @@ import tensorflow as tf
 from PIL import Image
 
 # -----------------------------
-# LOAD MODEL (FINAL FIX)
+# FIX INPUT LAYER (MAIN SOLUTION)
+# -----------------------------
+from tensorflow.keras.layers import InputLayer
+
+class FixedInputLayer(InputLayer):
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("batch_shape", None)
+        kwargs.pop("optional", None)
+        super().__init__(*args, **kwargs)
+
+# -----------------------------
+# LOAD MODEL
 # -----------------------------
 @st.cache_resource
 def load_model():
     try:
-        model = tf.keras.models.load_model("clean_model.h5", compile=False)
+        model = tf.keras.models.load_model(
+            "model.h5",
+            compile=False,
+            custom_objects={"InputLayer": FixedInputLayer}
+        )
         st.success("✅ Model Loaded Successfully")
         return model
     except Exception as e:
