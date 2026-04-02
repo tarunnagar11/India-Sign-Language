@@ -17,7 +17,13 @@ st.write("Files in directory:", os.listdir())
 # -----------------------------
 @st.cache_resource
 def load_model():
-    return tf.keras.models.load_model("final_model.keras", compile=False)
+    import tensorflow as tf
+    try:
+        model = tf.keras.models.load_model("final_model.keras", compile=False)
+        return model
+    except Exception as e:
+        st.error(f"Model loading failed: {e}")
+        return None
 
 model = load_model()
 
