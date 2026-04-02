@@ -9,7 +9,7 @@ from PIL import Image
 @st.cache_resource
 def load_model():
     try:
-        model = tf.keras.models.load_model("final_model.h5", compile=False)
+        model = tf.keras.models.load_model("fixed_model.h5", compile=False)
         st.success("✅ Model Loaded Successfully")
         return model
     except Exception as e:
