@@ -144,7 +144,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 @st.cache_resource
 def load_model():
     import tensorflow as tf
-    return tf.keras.models.load_model("best_model.keras", compile=False)
+    return tf.keras.models.load_model("final_model.keras", compile=False)
 model = load_model()
 
 # -----------------------------
