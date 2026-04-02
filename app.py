@@ -8,21 +8,21 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 # -----------------------------
-# DEBUG (REMOVE AFTER TESTING)
+# DEBUG (remove later)
 # -----------------------------
-st.write("Files in directory:", os.listdir())
+st.write("FILES:", os.listdir())
 
 # -----------------------------
-# LOAD MODEL
+# LOAD MODEL (.h5 version)
 # -----------------------------
 @st.cache_resource
 def load_model():
-    import tensorflow as tf
     try:
-        model = tf.keras.models.load_model("final_model.keras", compile=False)
+        model = tf.keras.models.load_model("final_model.h5", compile=False)
+        st.success("Model Loaded Successfully ✅")
         return model
     except Exception as e:
-        st.error(f"Model loading failed: {e}")
+        st.error(f"Error loading model: {e}")
         return None
 
 model = load_model()
