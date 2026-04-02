@@ -4,12 +4,12 @@ import tensorflow as tf
 from PIL import Image
 
 # -----------------------------
-# LOAD MODEL (FIXED)
+# LOAD MODEL (FINAL FIX)
 # -----------------------------
 @st.cache_resource
 def load_model():
     try:
-        model = tf.keras.models.load_model("model.h5", compile=False)
+        model = tf.keras.models.load_model("clean_model.h5", compile=False)
         st.success("✅ Model Loaded Successfully")
         return model
     except Exception as e:
@@ -24,7 +24,7 @@ model = load_model()
 classes = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 # -----------------------------
-# PREDICTION FUNCTION (SAFE)
+# PREDICTION FUNCTION
 # -----------------------------
 def predict_image(image):
     if model is None:
@@ -53,9 +53,6 @@ if uploaded_file:
 
     pred_class, conf = predict_image(image)
 
-    # -----------------------------
-    # SAFE OUTPUT
-    # -----------------------------
     if pred_class is not None:
         st.success(f"Prediction: {classes[pred_class]}")
         st.info(f"Confidence: {conf*100:.2f}%")
