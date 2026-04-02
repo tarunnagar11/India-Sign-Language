@@ -2,14 +2,13 @@ import streamlit as st
 import numpy as np
 import tensorflow as tf
 from PIL import Image
-import cv2
+import os
 
-# For real-time video
-from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
-import av
+# Reduce TensorFlow logs
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 # -----------------------------
-# LOAD MODEL (.h5 UPDATED)
+# LOAD MODEL
 # -----------------------------
 @st.cache_resource
 def load_model():
@@ -28,7 +27,7 @@ classes = list("abcdefghijklmnopqrstuvwxyz")
 st.set_page_config(page_title="ISL Recognition", layout="centered")
 
 st.title("🤟 Indian Sign Language Recognition System")
-st.write("Upload image, capture photo, or use live video")
+st.write("Upload image or capture photo")
 
 # -----------------------------
 # PREDICTION FUNCTION
@@ -42,14 +41,14 @@ def predict_image(image):
     predicted_class = np.argmax(prediction)
     confidence = np.max(prediction)
 
-    return predicted_class, confidence, prediction
+    return predicted_class, confidence
 
 # -----------------------------
 # SIDEBAR OPTION
 # -----------------------------
 option = st.sidebar.radio(
     "Choose Input Method",
-    ["Upload Image", "Camera Capture", "Live Video"]
+    ["Upload Image", "Camera Capture"]
 )
 
 # =========================================================
@@ -64,7 +63,7 @@ if option == "Upload Image":
         image = Image.open(uploaded_file).convert("RGB")
         st.image(image, caption="Uploaded Image", use_container_width=True)
 
-        pred_class, conf, pred = predict_image(image)
+        pred_class, conf = predict_image(image)
 
         st.success(f"Predicted: {classes[pred_class].upper()}")
         st.info(f"Confidence: {conf*100:.2f}%")
@@ -81,47 +80,10 @@ elif option == "Camera Capture":
         image = Image.open(camera_image).convert("RGB")
         st.image(image, caption="Captured Image", use_container_width=True)
 
-        pred_class, conf, pred = predict_image(image)
+        pred_class, conf = predict_image(image)
 
         st.success(f"Predicted: {classes[pred_class].upper()}")
         st.info(f"Confidence: {conf*100:.2f}%")
-
-# =========================================================
-# 3. LIVE VIDEO (REAL-TIME)
-# =========================================================
-elif option == "Live Video":
-    st.header("🎥 Real-Time Detection")
-
-    class VideoTransformer(VideoTransformerBase):
-        def transform(self, frame):
-            img = frame.to_ndarray(format="bgr24")
-
-            img_resized = cv2.resize(img, (224, 224))
-            img_array = img_resized / 255.0
-            img_array = np.expand_dims(img_array, axis=0)
-
-            prediction = model.predict(img_array)
-            pred_class = np.argmax(prediction)
-            confidence = np.max(prediction)
-
-            label = f"{classes[pred_class].upper()} ({confidence*100:.1f}%)"
-
-            cv2.putText(
-                img,
-                label,
-                (10, 40),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (0, 255, 0),
-                2
-            )
-
-            return img
-
-    webrtc_streamer(
-        key="isl-live",
-        video_transformer_factory=VideoTransformer
-    )
 
 # -----------------------------
 # FOOTER
